@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestão de Transbordo e Pátio de Barracão</title>
+  <title>Mapeamento do Barracão - Transbordo</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons CDN -->
@@ -11,132 +11,142 @@
   <style>
     .grid-docas-frente {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
     }
     .grid-docas-fundo {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
     }
-    .grid-setores-chao {
+    .grid-chao-lado {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-    }
-    .drop-zone-active {
-      border-color: #3b82f6 !important;
-      background-color: #eff6ff !important;
-      transform: scale(1.02);
-    }
-    .card-carga {
-      cursor: grab;
-      transition: all 0.2s ease;
-    }
-    .card-carga:active {
-      cursor: grabbing;
-      opacity: 0.7;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
     }
     .highlight-search {
       animation: pulseHighlight 1.5s infinite;
-      border-color: #eab308 !important;
-      box-shadow: 0 0 15px rgba(234, 179, 8, 0.6);
+      border-color: #f59e0b !important;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
     }
     @keyframes pulseHighlight {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
+      50% { transform: scale(1.02); }
     }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
-  <!-- BARRA SUPERIOR / CABEÇALHO -->
-  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+  <!-- CABEÇALHO DA APLICAÇÃO -->
+  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
     <div class="flex items-center space-x-3">
-      <i data-lucide="layout-grid" class="w-8 h-8 text-blue-400"></i>
+      <i data-lucide="layout-grid" class="w-7 h-7 text-amber-400"></i>
       <div>
-        <h1 class="text-xl font-bold text-white leading-tight">Mapa de Posição de Cargas — Transbordo</h1>
-        <p class="text-xs text-slate-400">Arraste as cargas do chão para a doca de destino desejada</p>
+        <h1 class="text-xl font-bold text-white leading-tight">Mapeamento de Transbordo — Barracão</h1>
+        <p class="text-xs text-slate-400">20 Posições Fixas no Chão (10 Esquerda / 10 Direita) + 11 Docas</p>
       </div>
     </div>
 
-    <!-- FERRAMENTAS E BUSCA -->
+    <!-- BARRA DE FERRAMENTAS E BUSCA -->
     <div class="flex items-center space-x-3 w-full md:w-auto">
       <div class="relative flex-1 md:w-72">
         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
-        <input id="searchInput" type="text" placeholder="Buscar por Rota, NF ou Cidade..." 
-               class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-blue-500">
+        <input id="searchInput" type="text" placeholder="Buscar Rota, NF ou Cidade..." 
+               class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-amber-500">
       </div>
-      <button onclick="abrirModalNovaCarga()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+      <button onclick="abrirModalNovaCarga()" class="bg-amber-600 hover:bg-amber-500 text-white font-medium text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition">
         <i data-lucide="plus-circle" class="w-4 h-4"></i>
         <span>Nova Carga</span>
       </button>
-      <button onclick="limparTudo()" class="bg-red-900/40 hover:bg-red-800/60 text-red-300 border border-red-700/50 font-medium text-sm px-3 py-2 rounded-lg flex items-center space-x-1 transition" title="Limpar todas as posições">
+      <button onclick="limparTudo()" class="bg-red-900/40 hover:bg-red-800/60 text-red-300 border border-red-700/50 font-medium text-sm px-3 py-2 rounded-lg flex items-center space-x-1 transition" title="Limpar Mapa">
         <i data-lucide="trash-2" class="w-4 h-4"></i>
       </button>
     </div>
   </header>
 
-  <!-- ÁREA PRINCIPAL DO MAPA DO BARRACÃO -->
-  <main class="flex-1 p-6 space-y-8 overflow-y-auto">
+  <!-- ÁREA DO BARRACÃO -->
+  <main class="flex-1 p-6 space-y-6 overflow-y-auto">
 
-    <!-- SEÇÃO 1: FRENTE DO BARRACÃO (DOCAS 01 A 06) -->
-    <section class="bg-slate-800/80 border border-slate-700 rounded-xl p-5 shadow-lg">
-      <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-2">
+    <!-- FRENTE DO BARRACÃO: DOCAS 01 A 06 -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 shadow-lg">
+      <div class="flex items-center justify-between mb-3 border-b border-slate-700 pb-2">
         <div class="flex items-center space-x-2">
-          <span class="bg-blue-500/20 text-blue-400 font-bold px-2.5 py-1 rounded text-xs uppercase border border-blue-500/30">Frente</span>
-          <h2 class="text-lg font-semibold text-slate-200">Docas de Carregamento — Frente (01 a 06)</h2>
+          <span class="bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded text-xs uppercase border border-blue-500/30">Frente</span>
+          <h2 class="text-base font-semibold text-slate-200">Docas de Carregamento — Frente (01 a 06)</h2>
         </div>
-        <span class="text-xs text-slate-400">Solte a carga na doca para designar a saída</span>
+        <span class="text-xs text-slate-400">6 Vagas de Embarque</span>
       </div>
       <div id="gridDocasFrente" class="grid-docas-frente">
-        <!-- Gerado via JavaScript -->
+        <!-- Renderizado via JS -->
       </div>
     </section>
 
-    <!-- SEÇÃO 2: RUA CENTRAL E CHÃO DO BARRACÃO (SETORES DE SEPARAÇÃO) -->
-    <section class="bg-slate-800/80 border border-slate-700 rounded-xl p-5 shadow-lg relative">
-      <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-2">
+    <!-- ÁREA DE CHÃO CENTRAL / TRIAGEM (DIVIDIDA EM 2 LADOS DE 10 POSIÇÕES) -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 shadow-lg space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
         <div class="flex items-center space-x-2">
-          <span class="bg-amber-500/20 text-amber-400 font-bold px-2.5 py-1 rounded text-xs uppercase border border-amber-500/30">Chão / Triagem</span>
-          <h2 class="text-lg font-semibold text-slate-200">Setores de Separação do Transbordo (Meio do Barracão)</h2>
+          <span class="bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded text-xs uppercase border border-amber-500/30">Chão / Triagem</span>
+          <h2 class="text-base font-semibold text-slate-200">Separação no Chão (20 Posições Fixas)</h2>
         </div>
-        <span class="text-xs text-slate-400">Localização das cargas descarregadas no piso</span>
+        <span class="text-xs text-slate-400">10 Posições Lado Esquerdo | 10 Posições Lado Direito</span>
       </div>
 
-      <!-- FAIXA DA RUA DE CIRCULAÇÃO -->
-      <div class="bg-amber-500/10 border-y-2 border-dashed border-amber-500/30 py-2 mb-6 px-4 flex items-center justify-between text-xs text-amber-300 font-semibold tracking-wider uppercase">
-        <span><i data-lucide="arrow-right" class="w-4 h-4 inline mr-1"></i> Rua Central — Trânsito de Empilhadeiras / Paleteiras</span>
-        <span>Fluxo Livre <i data-lucide="arrow-left" class="w-4 h-4 inline ml-1"></i></span>
+      <!-- CORREDOR CENTRAL DE EMPILHADEIRAS -->
+      <div class="bg-amber-500/10 border-y-2 border-dashed border-amber-500/30 py-2 px-4 flex items-center justify-between text-xs text-amber-300 font-semibold tracking-wider uppercase">
+        <span><i data-lucide="arrow-right" class="w-4 h-4 inline mr-1"></i> Corredor Principal — Circulação de Paleteiras e Empilhadeiras</span>
+        <span>Entrada & Saída de Transbordo <i data-lucide="arrow-left" class="w-4 h-4 inline ml-1"></i></span>
       </div>
 
-      <div id="gridSetoresChao" class="grid-setores-chao">
-        <!-- Gerado via JavaScript -->
+      <!-- GRID DOS DOIS LADOS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- LADO ESQUERDO: POSIÇÕES 01 A 10 -->
+        <div class="space-y-2 bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-1.5 mb-2">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1">
+              <i data-lucide="align-left" class="w-3.5 h-3.5"></i> Lado Esquerdo (Chão 01 a 10)
+            </span>
+          </div>
+          <div id="gridChaoEsquerdo" class="grid-chao-lado">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+
+        <!-- LADO DIREITO: POSIÇÕES 11 A 20 -->
+        <div class="space-y-2 bg-slate-900/50 p-3 rounded-lg border border-slate-700/60">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-1.5 mb-2">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1">
+              <i data-lucide="align-right" class="w-3.5 h-3.5"></i> Lado Direito (Chão 11 a 20)
+            </span>
+          </div>
+          <div id="gridChaoDireito" class="grid-chao-lado">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- SEÇÃO 3: FUNDO DO BARRACÃO (DOCAS 07 A 11) -->
-    <section class="bg-slate-800/80 border border-slate-700 rounded-xl p-5 shadow-lg">
-      <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-2">
+    <!-- FUNDO DO BARRACÃO: DOCAS 07 A 11 -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 shadow-lg">
+      <div class="flex items-center justify-between mb-3 border-b border-slate-700 pb-2">
         <div class="flex items-center space-x-2">
-          <span class="bg-purple-500/20 text-purple-400 font-bold px-2.5 py-1 rounded text-xs uppercase border border-purple-500/30">Fundo</span>
-          <h2 class="text-lg font-semibold text-slate-200">Docas de Carregamento — Fundo (07 a 11)</h2>
+          <span class="bg-purple-500/20 text-purple-400 font-bold px-2 py-0.5 rounded text-xs uppercase border border-purple-500/30">Fundo</span>
+          <h2 class="text-base font-semibold text-slate-200">Docas de Carregamento — Fundo (07 a 11)</h2>
         </div>
-        <span class="text-xs text-slate-400">Solte a carga na doca do fundo para designar a saída</span>
+        <span class="text-xs text-slate-400">5 Vagas de Embarque</span>
       </div>
       <div id="gridDocasFundo" class="grid-docas-fundo">
-        <!-- Gerado via JavaScript -->
+        <!-- Renderizado via JS -->
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL DE CADASTRO DE NOVA CARGA -->
+  <!-- MODAL DE REGISTRO / MOVER CARGA -->
   <div id="modalCarga" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-xl p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-700 pb-3">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="box" class="w-5 h-5 text-blue-400"></i> Registrar Carga no Chão
+          <i data-lucide="box" class="w-5 h-5 text-amber-400"></i> Registrar / Editar Carga
         </h3>
         <button onclick="fecharModalNovaCarga()" class="text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -146,27 +156,27 @@
       <form id="formCarga" onsubmit="salvarCarga(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Rota / Cidade / Cliente</label>
-          <input type="text" id="inputRota" required placeholder="Ex: Rota Campinas / Araraquara" 
-                 class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+          <input type="text" id="inputRota" required placeholder="Ex: Rota Araraquara / Ribeirão" 
+                 class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Qtd. Paletes/Vols</label>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Qtd. Paletes</label>
             <input type="number" id="inputPaletes" required min="1" value="1" 
-                   class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+                   class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500">
           </div>
           <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nº Nota Fiscal / Manifest</label>
-            <input type="text" id="inputNF" placeholder="Ex: NF-8842" 
-                   class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nota Fiscal / Manifesto</label>
+            <input type="text" id="inputNF" placeholder="Ex: NF-1290" 
+                   class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500">
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Posição Inicial no Chão</label>
-          <select id="selectPosicaoInicial" class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
-            <!-- Opções dos setores do chão inseridas via JS -->
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Posição no Barracão</label>
+          <select id="selectPosicaoInicial" class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500">
+            <!-- Opções inseridas via JS -->
           </select>
         </div>
 
@@ -174,8 +184,8 @@
           <button type="button" onclick="fecharModalNovaCarga()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm rounded-lg font-medium transition">
             Cancelar
           </button>
-          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg font-medium transition">
-            Salvar Carga no Chão
+          <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm rounded-lg font-medium transition">
+            Salvar Carga
           </button>
         </div>
       </form>
@@ -183,91 +193,91 @@
   </div>
 
   <script>
-    // ESTADO INICIAL DOS LOCAIS DO BARRACÃO
+    // ESTRUTURA FIXA DAS POSIÇÕES DO BARRACÃO
     const DOCAS_FRENTE = ['Doca 01', 'Doca 02', 'Doca 03', 'Doca 04', 'Doca 05', 'Doca 06'];
     const DOCAS_FUNDO = ['Doca 07', 'Doca 08', 'Doca 09', 'Doca 10', 'Doca 11'];
-    const SETORES_CHAO = [
-      'Setor A (Entrada)', 'Setor B (Meio)', 'Setor C (Separado)', 'Setor D (Aguardando)',
-      'Setor E (Avarias)', 'Setor F (Triagem)', 'Setor G (Devolução)', 'Setor H (Especial)'
+
+    // 20 POSIÇÕES DE CHÃO DIVIDIDAS
+    const CHAO_ESQUERDO = Array.from({ length: 10 }, (_, i) => `Chão ${String(i + 1).padStart(2, '0')}`);
+    const CHAO_DIREITO = Array.from({ length: 10 }, (_, i) => `Chão ${i + 11}`);
+
+    // TODAS AS POSIÇÕES DISPONÍVEIS NO BARRACÃO
+    const TODAS_POSICOES = [...CHAO_ESQUERDO, ...CHAO_DIREITO, ...DOCAS_FRENTE, ...DOCAS_FUNDO];
+
+    // BANCO DE DADOS DE CARGAS
+    let cargas = JSON.parse(localStorage.getItem('cargas_barracao_fixo')) || [
+      { id: '1', rota: 'Rota Ribeirão Preto', paletes: 10, nf: 'NF-8821', posicao: 'Chão 01' },
+      { id: '2', rota: 'Rota Araraquara', paletes: 6, nf: 'NF-8825', posicao: 'Chão 05' },
+      { id: '3', rota: 'Rota São Carlos', paletes: 12, nf: 'NF-8830', posicao: 'Chão 11' },
+      { id: '4', rota: 'Rota Bauru', paletes: 8, nf: 'NF-8832', posicao: 'Doca 02' }
     ];
 
-    // BANCO DE DADOS DE CARGAS (Local Storage ou Memória)
-    let cargas = JSON.parse(localStorage.getItem('cargas_barracao')) || [
-      { id: '1', rota: 'Rota Ribeirão Preto', paletes: 8, nf: 'NF-10452', posicao: 'Setor A (Entrada)', status: 'no_chao' },
-      { id: '2', rota: 'Rota São Carlos', paletes: 14, nf: 'NF-10458', posicao: 'Setor C (Separado)', status: 'no_chao' },
-      { id: '3', rota: 'Rota Bauru', paletes: 6, nf: 'NF-10460', posicao: 'Doca 02', status: 'carregando' }
-    ];
-
-    let cargaEmArrastoId = null;
-
-    // INICIALIZAÇÃO
     document.addEventListener('DOMContentLoaded', () => {
       renderizarBarracao();
-      popularSelectSetores();
+      popularSelectPosicoes();
       lucide.createIcons();
 
-      // EVENTO DE BUSCA EM TEMPO REAL
       document.getElementById('searchInput').addEventListener('input', (e) => {
         filtrarEHighlight(e.target.value.toLowerCase().trim());
       });
     });
 
     function salvarDados() {
-      localStorage.setItem('cargas_barracao', JSON.stringify(cargas));
+      localStorage.setItem('cargas_barracao_fixo', JSON.stringify(cargas));
     }
 
-    // RENDERIZAR ESTRUTURA VISUAL DO BARRACÃO
+    // RENDERIZAR TODO O LAYOUT VISUAL DO BARRACÃO
     function renderizarBarracao() {
-      // 1. Renderizar Docas da Frente
-      const elFrente = document.getElementById('gridDocasFrente');
-      elFrente.innerHTML = DOCAS_FRENTE.map(nomeDoca => criarCardAreaHtml(nomeDoca, 'doca-frente', 'border-blue-500/40')).join('');
+      // 1. Renderizar Docas Frente
+      document.getElementById('gridDocasFrente').innerHTML = DOCAS_FRENTE.map(d => criarBoxPosicaoHtml(d, 'doca-frente')).join('');
 
-      // 2. Renderizar Setores de Chão
-      const elChao = document.getElementById('gridSetoresChao');
-      elChao.innerHTML = SETORES_CHAO.map(nomeSetor => criarCardAreaHtml(nomeSetor, 'chao', 'border-amber-500/40')).join('');
+      // 2. Renderizar Chão Lado Esquerdo (01 a 10)
+      document.getElementById('gridChaoEsquerdo').innerHTML = CHAO_ESQUERDO.map(c => criarBoxPosicaoHtml(c, 'chao')).join('');
 
-      // 3. Renderizar Docas do Fundo
-      const elFundo = document.getElementById('gridDocasFundo');
-      elFundo.innerHTML = DOCAS_FUNDO.map(nomeDoca => criarCardAreaHtml(nomeDoca, 'doca-fundo', 'border-purple-500/40')).join('');
+      // 3. Renderizar Chão Lado Direito (11 a 20)
+      document.getElementById('gridChaoDireito').innerHTML = CHAO_DIREITO.map(c => criarBoxPosicaoHtml(c, 'chao')).join('');
 
-      // Preencher o conteúdo interno de cada posição com as cargas existentes
+      // 4. Renderizar Docas Fundo
+      document.getElementById('gridDocasFundo').innerHTML = DOCAS_FUNDO.map(d => criarBoxPosicaoHtml(d, 'doca-fundo')).join('');
+
+      // Preencher cada posição com sua carga correspondente
       cargas.forEach(carga => {
-        const elementoDestino = document.querySelector(`[data-posicao="${carga.posicao}"] .conteudo-vaga`);
-        if (elementoDestino) {
-          elementoDestino.innerHTML = criarCardCargaHtml(carga);
+        const elConteudo = document.querySelector(`[data-posicao="${carga.posicao}"] .conteudo-posicao`);
+        if (elConteudo) {
+          elConteudo.innerHTML = criarCardCargaHtml(carga);
         }
       });
 
       lucide.createIcons();
     }
 
-    // MONTA O HTML DAS POSIÇÕES (VAGAS)
-    function criarCardAreaHtml(nomePosicao, tipo, corBorda) {
+    // MONTA O BOX DE CADA VAGA / POSIÇÃO FIXA
+    function criarBoxPosicaoHtml(nomePosicao, tipo) {
       const cargaAtual = cargas.find(c => c.posicao === nomePosicao);
       const estaOcupada = !!cargaAtual;
 
+      let bordaCor = 'border-amber-500/30';
+      if (tipo === 'doca-frente') bordaCor = 'border-blue-500/40';
+      if (tipo === 'doca-fundo') bordaCor = 'border-purple-500/40';
+
       return `
         <div data-posicao="${nomePosicao}" 
-             ondragover="aoArrastarSobre(event)" 
-             ondragleave="aoSairArrasto(event)" 
-             ondrop="aoSoltarCarga(event, '${nomePosicao}')"
-             class="vaga-box bg-slate-900/90 border-2 ${estaOcupada ? 'border-slate-600' : corBorda} rounded-lg p-3 min-h-[140px] flex flex-col justify-between transition-all">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
-            <span class="text-xs font-bold text-slate-300 uppercase tracking-wide flex items-center gap-1">
-              <i data-lucide="${tipo.includes('doca') ? 'truck' : 'box'}" class="w-3.5 h-3.5 text-slate-400"></i>
+             class="posicao-box bg-slate-900 border ${estaOcupada ? 'border-slate-600 bg-slate-800/90' : bordaCor} rounded-lg p-2.5 min-h-[135px] flex flex-col justify-between transition-all">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
+            <span class="text-[11px] font-bold text-slate-300 uppercase flex items-center gap-1">
+              <i data-lucide="${tipo.includes('doca') ? 'truck' : 'map-pin'}" class="w-3 h-3 ${tipo.includes('doca') ? 'text-blue-400' : 'text-amber-400'}"></i>
               ${nomePosicao}
             </span>
             ${!estaOcupada ? `
-              <button onclick="abrirModalComPosicao('${nomePosicao}')" title="Adicionar Carga Aqui" class="text-slate-500 hover:text-blue-400">
-                <i data-lucide="plus" class="w-4 h-4"></i>
+              <button onclick="abrirModalComPosicao('${nomePosicao}')" title="Nova Carga Aqui" class="text-slate-500 hover:text-amber-400 p-0.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
               </button>
             ` : ''}
           </div>
-          <div class="conteudo-vaga flex-1 flex flex-col justify-center">
+          <div class="conteudo-posicao flex-1 flex flex-col justify-center">
             ${!estaOcupada ? `
-              <div class="text-center text-slate-600 text-xs py-4 flex flex-col items-center gap-1">
-                <span class="font-medium">Vaga Livre</span>
-                <span class="text-[10px] text-slate-600">Arraste uma carga para cá</span>
+              <div class="text-center text-slate-600 text-[11px] py-2">
+                <span>Vaga Livre</span>
               </div>
             ` : ''}
           </div>
@@ -275,85 +285,64 @@
       `;
     }
 
-    // MONTA O HTML DO CARTÃO DA CARGA (ARRASTÁVEL)
+    // MONTA O CARTÃO INTERNO DA CARGA COM MENU DE ENCAMINHAMENTO RÁPIDO
     function criarCardCargaHtml(carga) {
       const eDoca = carga.posicao.includes('Doca');
-      const corBg = eDoca ? 'bg-blue-900/60 border-blue-500/50' : 'bg-amber-900/50 border-amber-500/50';
+
+      // Gerar opções do seletor para mover de vaga rapidamente
+      const opcoesDestino = TODAS_POSICOES
+        .filter(p => p !== carga.posicao)
+        .map(p => `<option value="${p}">${p}</option>`)
+        .join('');
 
       return `
-        <div id="card-${carga.id}" 
-             draggable="true" 
-             ondragstart="aoIniciarArrasto(event, '${carga.id}')"
-             class="card-carga ${corBg} border rounded-md p-2.5 shadow-md hover:shadow-lg transition">
-          <div class="flex items-start justify-between gap-1 mb-1">
-            <h4 class="text-xs font-bold text-white leading-snug">${carga.rota}</h4>
-            <button onclick="removerCarga('${carga.id}')" title="Remover/Carregado" class="text-slate-400 hover:text-red-400">
+        <div class="card-carga ${eDoca ? 'bg-blue-950/60 border-blue-500/40' : 'bg-slate-800/90 border-amber-500/40'} border rounded p-2 shadow space-y-2">
+          <div class="flex items-start justify-between gap-1">
+            <h4 class="text-xs font-bold text-white leading-tight">${carga.rota}</h4>
+            <button onclick="removerCarga('${carga.id}')" title="Dar Saída / Apagar" class="text-slate-400 hover:text-red-400">
               <i data-lucide="x" class="w-3.5 h-3.5"></i>
             </button>
           </div>
-          
-          <div class="flex items-center justify-between text-[11px] text-slate-300 mt-2 bg-slate-950/40 p-1.5 rounded">
-            <span class="font-semibold text-blue-300">${carga.paletes} Palete(s)</span>
+
+          <div class="flex items-center justify-between text-[10px] text-slate-300 bg-slate-950/50 px-1.5 py-1 rounded">
+            <span class="font-semibold text-amber-300">${carga.paletes} Palete(s)</span>
             <span class="text-slate-400">${carga.nf || 'Sem NF'}</span>
           </div>
 
-          <div class="mt-2 text-[10px] flex items-center justify-between text-slate-400 border-t border-slate-700/50 pt-1.5">
-            <span>Status: <strong class="${eDoca ? 'text-green-400' : 'text-amber-300'}">${eDoca ? 'Pronto na Doca' : 'No Chão'}</strong></span>
-            <i data-lucide="grip-vertical" class="w-3 h-3 text-slate-500"></i>
+          <!-- BOTÃO / SELETOR PARA ENCAMINHAR / MOVER CARGA SEM ARRASTAR -->
+          <div class="pt-1 border-t border-slate-700/60">
+            <label class="block text-[9px] uppercase font-bold text-slate-400 mb-0.5">Encaminhar / Mover:</label>
+            <select onchange="moverCargaPara('${carga.id}', this.value)" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-[10px] rounded px-1.5 py-1 focus:outline-none focus:border-amber-500">
+              <option value="" disabled selected>Selecionar destino...</option>
+              ${opcoesDestino}
+            </select>
           </div>
         </div>
       `;
     }
 
-    // EVENTOS DE DRAG & DROP (ARRASTAR E SOLTAR)
-    function aoIniciarArrasto(event, idCarga) {
-      cargaEmArrastoId = idCarga;
-      event.dataTransfer.setData('text/plain', idCarga);
-    }
+    // FUNÇÃO PARA MOVER A CARGA DE UMA POSIÇÃO PARA OUTRA
+    function moverCargaPara(idCarga, novaPosicao) {
+      if (!novaPosicao) return;
 
-    function aoArrastarSobre(event) {
-      event.preventDefault();
-      const vagaBox = event.currentTarget;
-      vagaBox.classList.add('drop-zone-active');
-    }
-
-    function aoSairArrasto(event) {
-      const vagaBox = event.currentTarget;
-      vagaBox.classList.remove('drop-zone-active');
-    }
-
-    function aoSoltarCarga(event, novaPosicao) {
-      event.preventDefault();
-      const vagaBox = event.currentTarget;
-      vagaBox.classList.remove('drop-zone-active');
-
-      if (!cargaEmArrastoId) return;
-
-      // Verifica se a posição de destino já tem uma carga
-      const jaTemCarga = cargas.some(c => c.posicao === novaPosicao && c.id !== cargaEmArrastoId);
-      if (jaTemCarga) {
-        alert('Esta vaga/doca já tem uma carga posicionada!');
+      // Verificar se a vaga destino já está ocupada
+      const jaOcupada = cargas.some(c => c.posicao === novaPosicao);
+      if (jaOcupada) {
+        alert(`A vaga/doca "${novaPosicao}" já tem uma carga alocada! Libere ou escolha outra.`);
+        renderizarBarracao();
         return;
       }
 
-      // Atualiza a posição no BD de cargas
-      cargas = cargas.map(c => {
-        if (c.id === cargaEmArrastoId) {
-          return { ...c, posicao: novaPosicao };
-        }
-        return c;
-      });
-
-      cargaEmArrastoId = null;
+      // Atualiza a posição
+      cargas = cargas.map(c => c.id === idCarga ? { ...c, posicao: novaPosicao } : c);
       salvarDados();
       renderizarBarracao();
     }
 
-    // FUNÇÕES DE CADASTRO DE CARGA
-    function popularSelectSetores() {
+    // MODAL DE NOVA CARGA
+    function popularSelectPosicoes() {
       const select = document.getElementById('selectPosicaoInicial');
-      const todasPosicoes = [...SETORES_CHAO, ...DOCAS_FRENTE, ...DOCAS_FUNDO];
-      select.innerHTML = todasPosicoes.map(p => `<option value="${p}">${p}</option>`).join('');
+      select.innerHTML = TODAS_POSICOES.map(p => `<option value="${p}">${p}</option>`).join('');
     }
 
     function abrirModalNovaCarga() {
@@ -377,9 +366,8 @@
       const nf = document.getElementById('inputNF').value;
       const posicao = document.getElementById('selectPosicaoInicial').value;
 
-      // Verificar ocupação
       if (cargas.some(c => c.posicao === posicao)) {
-        alert('Essa posição já tem uma carga registrada!');
+        alert('Essa posição já está ocupada!');
         return;
       }
 
@@ -388,8 +376,7 @@
         rota,
         paletes,
         nf,
-        posicao,
-        status: posicao.includes('Doca') ? 'carregando' : 'no_chao'
+        posicao
       };
 
       cargas.push(novaCarga);
@@ -399,7 +386,7 @@
     }
 
     function removerCarga(id) {
-      if (confirm('Deseja dar saída / remover esta carga do barracão?')) {
+      if (confirm('Confirma a saída / remoção desta carga do barracão?')) {
         cargas = cargas.filter(c => c.id !== id);
         salvarDados();
         renderizarBarracao();
@@ -407,24 +394,24 @@
     }
 
     function limparTudo() {
-      if (confirm('Tem certeza que deseja LIMPAR TODAS as cargas do mapa?')) {
+      if (confirm('Tem certeza que deseja LIMPAR TODAS as posições do barracão?')) {
         cargas = [];
         salvarDados();
         renderizarBarracao();
       }
     }
 
-    // BUSCA E DESTAQUE VISUAL NA TELA
+    // BUSCA E DESTAQUE VISUAL
     function filtrarEHighlight(termo) {
-      document.querySelectorAll('.vaga-box').forEach(el => el.classList.remove('highlight-search'));
+      document.querySelectorAll('.posicao-box').forEach(el => el.classList.remove('highlight-search'));
 
       if (!termo) return;
 
       cargas.forEach(c => {
         if (c.rota.toLowerCase().includes(termo) || (c.nf && c.nf.toLowerCase().includes(termo))) {
-          const elVaga = document.querySelector(`[data-posicao="${c.posicao}"]`);
-          if (elVaga) {
-            elVaga.classList.add('highlight-search');
+          const elPosicao = document.querySelector(`[data-posicao="${c.posicao}"]`);
+          if (elPosicao) {
+            elPosicao.classList.add('highlight-search');
           }
         }
       });
