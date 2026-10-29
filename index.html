@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Manutenção e Check-list por Placa</title>
+  <title>Gestão de Manutenção por Placa com Importação de Planilha</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SheetJS para Leitura de Excel (.xlsx / .csv) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     .highlight-search {
       animation: pulseHighlight 1.5s infinite;
@@ -28,20 +30,27 @@
       <i data-lucide="wrench" class="w-7 h-7 text-blue-400"></i>
       <div>
         <h1 class="text-xl font-bold text-white leading-tight">Gestão de Manutenção & Check-list por Placa</h1>
-        <p class="text-xs text-slate-400">Controle por Agendamento, Status e Exportação de Relatório</p>
+        <p class="text-xs text-slate-400">Importação e Exportação por Planilha Excel/CSV</p>
       </div>
     </div>
 
-    <!-- BUSCA E AÇÕES -->
+    <!-- BOTÕES E AÇÕES DA BARRA SUPERIOR -->
     <div class="flex items-center space-x-3 w-full md:w-auto">
-      <div class="relative flex-1 md:w-64">
+      <div class="relative flex-1 md:w-60">
         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
         <input id="searchInput" type="text" placeholder="Buscar Placa ou Modelo..." 
                class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-blue-500">
       </div>
       
-      <!-- BOTÃO EXPORTAR EXCEL / CSV -->
-      <button onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm px-3.5 py-2 rounded-lg flex items-center space-x-2 transition" title="Exportar dados para Excel/CSV">
+      <!-- BOTÃO DE IMPORTAR PLANILHA -->
+      <label class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm px-3.5 py-2 rounded-lg flex items-center space-x-2 transition cursor-pointer" title="Importar arquivo Excel (.xlsx) ou CSV">
+        <i data-lucide="file-up" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Importar Planilha</span>
+        <input type="file" id="inputImportarExcel" accept=".xlsx, .xls, .csv" onchange="importarPlanilha(event)" class="hidden">
+      </label>
+
+      <!-- BOTÃO DE EXPORTAR PLANILHA -->
+      <button onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm px-3.5 py-2 rounded-lg flex items-center space-x-2 transition" title="Exportar para Excel/CSV">
         <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
         <span class="hidden sm:inline">Baixar Planilha</span>
       </button>
@@ -98,7 +107,7 @@
 
   </main>
 
-  <!-- MODAL DE CADASTRO COM AGENDAMENTO -->
+  <!-- MODAL DE CADASTRO -->
   <div id="modalServico" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
     <div class="bg-slate-800 border border-slate-700 w-full max-w-lg rounded-xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-700 pb-3">
@@ -124,10 +133,9 @@
           </div>
         </div>
 
-        <!-- CAMPO DE DIA DO AGENDAMENTO -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Data do Agendamento (Opcional)</label>
+            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Data do Agendamento</label>
             <input type="date" id="inputDataAgendamento" 
                    class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
           </div>
@@ -138,7 +146,6 @@
           </div>
         </div>
 
-        <!-- CHECK-LIST DE ITENS -->
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">Marque o que precisa ser feito:</label>
           <div class="grid grid-cols-2 gap-2 bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs">
@@ -170,14 +177,14 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Outro serviço específico (opcional)</label>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Outro serviço específico</label>
           <input type="text" id="inputOutroItem" placeholder="Ex: Reparar trava elétrica da porta" 
                  class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Observações adicionais</label>
-          <textarea id="inputObs" rows="2" placeholder="Ex: Trazer veículo sem carga..." 
+          <textarea id="inputObs" rows="2" placeholder="Ex: Veículo chega no período da manhã..." 
                     class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"></textarea>
         </div>
 
@@ -203,7 +210,7 @@
         dataCadastro: '29/10/2026',
         dataAgendamento: '2026-10-30',
         horaAgendamento: '08:30',
-        obs: 'Veículo da frota local',
+        obs: 'Exemplo de cadastro inicial',
         itens: [
           { nome: 'Instalação de Rastreador', feito: false },
           { nome: 'Instalação de Alarme', feito: false }
@@ -234,237 +241,3 @@
       const arrConcluido = manutencoes.filter(m => m.status === 'concluido');
 
       document.getElementById('countAguardando').innerText = arrAguardando.length;
-      document.getElementById('countAndamento').innerText = arrAndamento.length;
-      document.getElementById('countConcluido').innerText = arrConcluido.length;
-
-      elAguardando.innerHTML = arrAguardando.map(m => criarCardHtml(m)).join('') || semRegistrosHtml();
-      elAndamento.innerHTML = arrAndamento.map(m => criarCardHtml(m)).join('') || semRegistrosHtml();
-      elConcluido.innerHTML = arrConcluido.map(m => criarCardHtml(m)).join('') || semRegistrosHtml();
-
-      lucide.createIcons();
-    }
-
-    function semRegistrosHtml() {
-      return `<div class="text-center text-slate-600 text-xs py-8 border border-dashed border-slate-700/60 rounded-lg">Nenhum veículo nesta etapa</div>`;
-    }
-
-    function formatarDataBR(dataIso) {
-      if (!dataIso) return null;
-      const partes = dataIso.split('-');
-      if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
-      return dataIso;
-    }
-
-    function criarCardHtml(m) {
-      const concluidos = m.itens.filter(i => i.feito).length;
-      const total = m.itens.length;
-      const pct = total > 0 ? Math.round((concluidos / total) * 100) : 0;
-      const dataAgendadaBR = formatarDataBR(m.dataAgendamento);
-
-      const checklistHtml = m.itens.map((item, idx) => `
-        <label class="flex items-center justify-between text-xs py-1 border-b border-slate-800/60 last:border-0 cursor-pointer">
-          <span class="${item.feito ? 'line-through text-slate-500' : 'text-slate-200'} font-medium">
-            ${item.nome}
-          </span>
-          <input type="checkbox" ${item.feito ? 'checked' : ''} 
-                 onchange="alternarItemChecklist('${m.id}', ${idx})" 
-                 class="rounded text-blue-500 focus:ring-0">
-        </label>
-      `).join('');
-
-      return `
-        <div data-placa="${m.placa.toLowerCase()}" class="card-manutencao bg-slate-900 border border-slate-700 rounded-lg p-3.5 shadow-md space-y-3 transition">
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <span class="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold text-xs uppercase tracking-wider">${m.placa}</span>
-              <h3 class="text-sm font-bold text-white mt-1">${m.modelo}</h3>
-            </div>
-            <button onclick="removerRegistro('${m.id}')" title="Excluir Veículo" class="text-slate-500 hover:text-red-400">
-              <i data-lucide="trash" class="w-4 h-4"></i>
-            </button>
-          </div>
-
-          <!-- DIA DO AGENDAMENTO (SE HOUVER) -->
-          ${dataAgendadaBR ? `
-            <div class="bg-amber-500/10 border border-amber-500/30 rounded p-1.5 flex items-center justify-between text-amber-300 text-xs font-semibold">
-              <span class="flex items-center gap-1">
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400"></i>
-                Agendado para: ${dataAgendadaBR}
-              </span>
-              ${m.horaAgendamento ? `<span class="bg-amber-500/20 px-1.5 py-0.5 rounded text-[10px]"><i data-lucide="clock" class="w-3 h-3 inline"></i> ${m.horaAgendamento}</span>` : ''}
-            </div>
-          ` : ''}
-
-          <!-- BARRA DE PROGRESSO DO CHECK-LIST -->
-          <div class="space-y-1">
-            <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
-              <span>Progresso dos Serviços</span>
-              <span>${concluidos}/${total} (${pct}%)</span>
-            </div>
-            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div class="bg-blue-500 h-1.5 rounded-full transition-all" style="width: ${pct}%"></div>
-            </div>
-          </div>
-
-          <!-- ITENS DO CHECK-LIST -->
-          <div class="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800 space-y-1">
-            <span class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Check-list de Serviços:</span>
-            ${checklistHtml || '<span class="text-slate-500 text-xs">Nenhum item adicionado.</span>'}
-          </div>
-
-          ${m.obs ? `<p class="text-[11px] text-slate-400 italic bg-slate-950/30 p-1.5 rounded">Obs: ${m.obs}</p>` : ''}
-
-          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800">
-            <span>Entrada: ${m.dataCadastro}</span>
-            <select onchange="alterarStatus('${m.id}', this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-[10px] rounded px-1.5 py-1 focus:outline-none focus:border-blue-500 font-medium">
-              <option value="aguardando" ${m.status === 'aguardando' ? 'selected' : ''}>Aguardando / Agendado</option>
-              <option value="andamento" ${m.status === 'andamento' ? 'selected' : ''}>Em Manutenção</option>
-              <option value="concluido" ${m.status === 'concluido' ? 'selected' : ''}>Concluído</option>
-            </select>
-          </div>
-        </div>
-      `;
-    }
-
-    function alternarItemChecklist(idVeiculo, indexItem) {
-      manutencoes = manutencoes.map(m => {
-        if (m.id === idVeiculo) {
-          const novosItens = [...m.itens];
-          novosItens[indexItem].feito = !novosItens[indexItem].feito;
-          return { ...m, itens: novosItens };
-        }
-        return m;
-      });
-      salvarDados();
-      renderizarPainel();
-    }
-
-    function alterarStatus(id, novoStatus) {
-      manutencoes = manutencoes.map(m => m.id === id ? { ...m, status: novoStatus } : m);
-      salvarDados();
-      renderizarPainel();
-    }
-
-    function abrirModalNovoServico() {
-      document.getElementById('modalServico').classList.remove('hidden');
-    }
-
-    function fecharModalNovoServico() {
-      document.getElementById('modalServico').classList.add('hidden');
-      document.getElementById('formServico').reset();
-    }
-
-    function salvarServico(e) {
-      e.preventDefault();
-      const placa = document.getElementById('inputPlaca').value.toUpperCase();
-      const modelo = document.getElementById('inputModelo').value;
-      const dataAgendamento = document.getElementById('inputDataAgendamento').value;
-      const horaAgendamento = document.getElementById('inputHoraAgendamento').value;
-      const obs = document.getElementById('inputObs').value;
-      const outroItem = document.getElementById('inputOutroItem').value.trim();
-
-      const itensSelecionados = [];
-      document.querySelectorAll('.chk-item:checked').forEach(chk => {
-        itensSelecionados.push({ nome: chk.value, feito: false });
-      });
-
-      if (outroItem) {
-        itensSelecionados.push({ nome: outroItem, feito: false });
-      }
-
-      if (itensSelecionados.length === 0) {
-        alert('Por favor, marque pelo menos um item do check-list!');
-        return;
-      }
-
-      const novo = {
-        id: Date.now().toString(),
-        placa,
-        modelo,
-        dataAgendamento,
-        horaAgendamento,
-        obs,
-        itens: itensSelecionados,
-        status: 'aguardando',
-        dataCadastro: new Date().toLocaleDateString('pt-BR')
-      };
-
-      manutencoes.unshift(novo);
-      salvarDados();
-      renderizarPainel();
-      fecharModalNovoServico();
-    }
-
-    function removerRegistro(id) {
-      if (confirm('Deseja excluir este veículo do controle?')) {
-        manutencoes = manutencoes.filter(m => m.id !== id);
-        salvarDados();
-        renderizarPainel();
-      }
-    }
-
-    function limparTudo() {
-      if (confirm('Deseja apagar todos os veículos cadastrados?')) {
-        manutencoes = [];
-        salvarDados();
-        renderizarPainel();
-      }
-    }
-
-    function filtrarEHighlight(termo) {
-      document.querySelectorAll('.card-manutencao').forEach(el => {
-        const placa = el.getAttribute('data-placa');
-        if (termo && placa.includes(termo)) {
-          el.classList.add('highlight-search');
-        } else {
-          el.classList.remove('highlight-search');
-        }
-      });
-    }
-
-    // EXPORTAR PLANILHA EXCEL / CSV
-    function exportarExcel() {
-      if (manutencoes.length === 0) {
-        alert('Não há dados cadastrados para exportar!');
-        return;
-      }
-
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // BOM para acentuação correta no Excel
-      csvContent += "Placa;Modelo;Data Agendamento;Horario Agendamento;Status;Servicos / Checklist;Observacoes;Data Cadastro\n";
-
-      manutencoes.forEach(m => {
-        const dataAgendBR = formatarDataBR(m.dataAgendamento) || "Nao agendado";
-        const horaAgend = m.horaAgendamento || "-";
-        
-        // Formatar itens do checklist (Feito / Pendente)
-        const listaServicos = m.itens.map(i => `${i.nome} [${i.feito ? 'CONCLUIDO' : 'PENDENTE'}]`).join(' | ');
-        
-        let statusTexto = "Aguardando";
-        if (m.status === 'andamento') statusTexto = "Em Manutencao";
-        if (m.status === 'concluido') statusTexto = "Concluido";
-
-        const linha = [
-          `"${m.placa}"`,
-          `"${m.modelo}"`,
-          `"${dataAgendBR}"`,
-          `"${horaAgend}"`,
-          `"${statusTexto}"`,
-          `"${listaServicos}"`,
-          `"${m.obs || ''}"`,
-          `"${m.dataCadastro}"`
-        ].join(";");
-
-        csvContent += linha + "\n";
-      });
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `relatorio_manutencao_frota_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  </script>
-</body>
-</html>
