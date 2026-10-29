@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Manutenção e Instalação de Frota</title>
+  <title>Controle de Manutenção e Check-list por Placa</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons CDN -->
@@ -27,12 +27,12 @@
     <div class="flex items-center space-x-3">
       <i data-lucide="wrench" class="w-7 h-7 text-blue-400"></i>
       <div>
-        <h1 class="text-xl font-bold text-white leading-tight">Gestão de Manutenção & Instalações de Veículos</h1>
-        <p class="text-xs text-slate-400">Controle por Placa e Status de Oficina</p>
+        <h1 class="text-xl font-bold text-white leading-tight">Gestão de Manutenção & Check-list por Placa</h1>
+        <p class="text-xs text-slate-400">Marque e acompanhe os serviços necessários em cada veículo</p>
       </div>
     </div>
 
-    <!-- BUSCA E AÇÕES -->
+    <!-- BUSCA E BOTÃO NOVO -->
     <div class="flex items-center space-x-3 w-full md:w-auto">
       <div class="relative flex-1 md:w-72">
         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
@@ -41,7 +41,7 @@
       </div>
       <button onclick="abrirModalNovoServico()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition">
         <i data-lucide="plus-circle" class="w-4 h-4"></i>
-        <span>Nova Manutenção</span>
+        <span>Novo Veículo</span>
       </button>
       <button onclick="limparTudo()" class="bg-red-900/40 hover:bg-red-800/60 text-red-300 border border-red-700/50 font-medium text-sm px-3 py-2 rounded-lg flex items-center space-x-1 transition" title="Limpar Registros">
         <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -49,7 +49,7 @@
     </div>
   </header>
 
-  <!-- PAINEL KANBAN DE STATUS -->
+  <!-- COLUNAS KANBAN -->
   <main class="flex-1 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto">
 
     <!-- COLUNA 1: AGUARDANDO SERVIÇO -->
@@ -61,12 +61,10 @@
         </div>
         <span id="countAguardando" class="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
       </div>
-      <div id="listaAguardando" class="flex-1 space-y-3">
-        <!-- Cards inseridos via JS -->
-      </div>
+      <div id="listaAguardando" class="flex-1 space-y-3"></div>
     </section>
 
-    <!-- COLUNA 2: EM ANDAMENTO / OFICINA -->
+    <!-- COLUNA 2: EM MANUTENÇÃO -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-xl p-4 flex flex-col">
       <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-2">
         <div class="flex items-center space-x-2">
@@ -75,9 +73,7 @@
         </div>
         <span id="countAndamento" class="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
       </div>
-      <div id="listaAndamento" class="flex-1 space-y-3">
-        <!-- Cards inseridos via JS -->
-      </div>
+      <div id="listaAndamento" class="flex-1 space-y-3"></div>
     </section>
 
     <!-- COLUNA 3: CONCLUÍDO -->
@@ -89,53 +85,78 @@
         </div>
         <span id="countConcluido" class="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
       </div>
-      <div id="listaConcluido" class="flex-1 space-y-3">
-        <!-- Cards inseridos via JS -->
-      </div>
+      <div id="listaConcluido" class="flex-1 space-y-3"></div>
     </section>
 
   </main>
 
-  <!-- MODAL DE CADASTRO DE MANUTENÇÃO -->
+  <!-- MODAL DE CADASTRO COM CHECK-LIST -->
   <div id="modalServico" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
-    <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-xl p-6 shadow-2xl space-y-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-lg rounded-xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-700 pb-3">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i data-lucide="car" class="w-5 h-5 text-blue-400"></i> Cadastrar Manutenção / Instalação
+          <i data-lucide="car" class="w-5 h-5 text-blue-400"></i> Entrada de Veículo & Check-list
         </h3>
         <button onclick="fecharModalNovoServico()" class="text-slate-400 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="formServico" onsubmit="salvarServico(event)" class="space-y-3">
+      <form id="formServico" onsubmit="salvarServico(event)" class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Placa do Veículo</label>
-            <input type="text" id="inputPlaca" required placeholder="Ex: ABC-1D23" uppercase
+            <input type="text" id="inputPlaca" required placeholder="Ex: ABC-1234" 
                    class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 font-mono font-bold uppercase">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Modelo / Veículo</label>
-            <input type="text" id="inputModelo" required placeholder="Ex: Iveco Daily / Caminhão" 
+            <input type="text" id="inputModelo" required placeholder="Ex: Iveco Daily 2022" 
                    class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
           </div>
         </div>
 
+        <!-- SEÇÃO DE SELEÇÃO RÁPIDA DE ITENS A FAZER -->
         <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Tipo de Serviço / Instalação</label>
-          <select id="selectTipo" class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
-            <option value="Instalação de Equipamento / Rastreador">Instalação de Equipamento / Rastreador</option>
-            <option value="Manutenção Elétrica / Alarme">Manutenção Elétrica / Alarme</option>
-            <option value="Emissões / DPF / Sistema NOx">Emissões / DPF / Sistema NOx</option>
-            <option value="Revisão Preventiva / Troca de Óleo">Revisão Preventiva / Troca de Óleo</option>
-            <option value="Manutenção Mecânica Corretiva">Manutenção Mecânica Corretiva</option>
-          </select>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">Marque o que precisa ser feito:</label>
+          <div class="grid grid-cols-2 gap-2 bg-slate-900 p-3 rounded-lg border border-slate-700 text-xs">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" value="Instalação de Rastreador" class="chk-item rounded text-blue-600 focus:ring-0">
+              <span>Instalação Rastreador</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" value="Instalação de Alarme" class="chk-item rounded text-blue-600 focus:ring-0">
+              <span>Instalação Alarme</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" value="Revisão Elétrica / Fusiveis" class="chk-item rounded text-blue-600 focus:ring-0">
+              <span>Revisão Elétrica</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" value="Regeneração DPF / Sensor NOx" class="chk-item rounded text-blue-600 focus:ring-0">
+              <span>Regeneração DPF / NOx</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" value="Troca de Óleo e Filtros" class="chk-item rounded text-blue-600 focus:ring-0">
+              <span>Troca de Óleo / Filtros</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" value="Manutenção de Freios" class="chk-item rounded text-blue-600 focus:ring-0">
+              <span>Manutenção de Freios</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- CAMPO PARA ADICIONAR OUTRO ITEM PERSONALIZADO -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Outro serviço específico (opcional)</label>
+          <input type="text" id="inputOutroItem" placeholder="Ex: Reparar trava elétrica da porta direita" 
+                 class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
         </div>
 
         <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Observações / Peças / Detalhes</label>
-          <textarea id="inputObs" rows="3" placeholder="Descreva os detalhes da manutenção ou instalação..." 
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Observações adicionais</label>
+          <textarea id="inputObs" rows="2" placeholder="Ex: Cliente relatou falha intermitente no painel..." 
                     class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"></textarea>
         </div>
 
@@ -144,7 +165,7 @@
             Cancelar
           </button>
           <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg font-medium transition">
-            Salvar Registro
+            Cadastrar Veículo
           </button>
         </div>
       </form>
@@ -152,9 +173,20 @@
   </div>
 
   <script>
-    let manutencoes = JSON.parse(localStorage.getItem('manutencoes_frota')) || [
-      { id: '1', placa: 'ABC-1234', modelo: 'Iveco Daily 2022', tipo: 'Instalação de Equipamento / Rastreador', obs: 'Instalar sistema de telemetria e rastreador', status: 'aguardando', data: '29/10/2026' },
-      { id: '2', placa: 'XYZ-9876', modelo: 'Caminhão VW 24.280', tipo: 'Emissões / DPF / Sistema NOx', obs: 'Verificar sensor NOx e limpeza DPF', status: 'andamento', data: '29/10/2026' }
+    let manutencoes = JSON.parse(localStorage.getItem('manutencoes_checklist')) || [
+      {
+        id: '1',
+        placa: 'ABC-1234',
+        modelo: 'Iveco Daily 2022',
+        status: 'andamento',
+        data: '29/10/2026',
+        obs: 'Verificar fusível queimado se necessário',
+        itens: [
+          { nome: 'Instalação de Rastreador', feito: true },
+          { nome: 'Instalação de Alarme', feito: false },
+          { nome: 'Regeneração DPF / Sensor NOx', feito: false }
+        ]
+      }
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -167,7 +199,7 @@
     });
 
     function salvarDados() {
-      localStorage.setItem('manutencoes_frota', JSON.stringify(manutencoes));
+      localStorage.setItem('manutencoes_checklist', JSON.stringify(manutencoes));
     }
 
     function renderizarPainel() {
@@ -191,26 +223,55 @@
     }
 
     function semRegistrosHtml() {
-      return `<div class="text-center text-slate-600 text-xs py-8 border border-dashed border-slate-700/60 rounded-lg">Nenhum veículo neste status</div>`;
+      return `<div class="text-center text-slate-600 text-xs py-8 border border-dashed border-slate-700/60 rounded-lg">Nenhum veículo nesta etapa</div>`;
     }
 
     function criarCardHtml(m) {
+      const concluidos = m.itens.filter(i => i.feito).length;
+      const total = m.itens.length;
+      const pct = total > 0 ? Math.round((concluidos / total) * 100) : 0;
+
+      const checklistHtml = m.itens.map((item, idx) => `
+        <label class="flex items-center justify-between text-xs py-1 border-b border-slate-800/60 last:border-0 cursor-pointer">
+          <span class="${item.feito ? 'line-through text-slate-500' : 'text-slate-200'} font-medium">
+            ${item.nome}
+          </span>
+          <input type="checkbox" ${item.feito ? 'checked' : ''} 
+                 onchange="alternarItemChecklist('${m.id}', ${idx})" 
+                 class="rounded text-blue-500 focus:ring-0">
+        </label>
+      `).join('');
+
       return `
-        <div data-placa="${m.placa.toLowerCase()}" class="card-manutencao bg-slate-900 border border-slate-700 rounded-lg p-3.5 shadow-md space-y-2 relative transition">
+        <div data-placa="${m.placa.toLowerCase()}" class="card-manutencao bg-slate-900 border border-slate-700 rounded-lg p-3.5 shadow-md space-y-3 transition">
           <div class="flex items-start justify-between gap-2">
             <div>
               <span class="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold text-xs uppercase tracking-wider">${m.placa}</span>
               <h3 class="text-sm font-bold text-white mt-1">${m.modelo}</h3>
             </div>
-            <button onclick="removerRegistro('${m.id}')" title="Excluir Registro" class="text-slate-500 hover:text-red-400">
+            <button onclick="removerRegistro('${m.id}')" title="Excluir Veículo" class="text-slate-500 hover:text-red-400">
               <i data-lucide="trash" class="w-4 h-4"></i>
             </button>
           </div>
 
-          <div class="text-xs text-slate-300 bg-slate-950/60 p-2 rounded border border-slate-800">
-            <p class="font-semibold text-amber-400 mb-0.5">${m.tipo}</p>
-            <p class="text-slate-400 text-[11px] leading-relaxed">${m.obs || 'Sem observações adicionais.'}</p>
+          <!-- BARRA DE PROGRESSO DO CHECK-LIST -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
+              <span>Serviços Concluídos</span>
+              <span>${concluidos}/${total} (${pct}%)</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div class="bg-blue-500 h-1.5 rounded-full transition-all" style="width: ${pct}%"></div>
+            </div>
           </div>
+
+          <!-- ITENS A FAZER -->
+          <div class="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800 space-y-1">
+            <span class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Lista de Tarefas:</span>
+            ${checklistHtml || '<span class="text-slate-500 text-xs">Nenhum item marcado.</span>'}
+          </div>
+
+          ${m.obs ? `<p class="text-[11px] text-slate-400 italic bg-slate-950/30 p-1.5 rounded">Obs: ${m.obs}</p>` : ''}
 
           <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800">
             <span>Data: ${m.data}</span>
@@ -222,6 +283,19 @@
           </div>
         </div>
       `;
+    }
+
+    function alternarItemChecklist(idVeiculo, indexItem) {
+      manutencoes = manutencoes.map(m => {
+        if (m.id === idVeiculo) {
+          const novosItens = [...m.itens];
+          novosItens[indexItem].feito = !novosItens[indexItem].feito;
+          return { ...m, itens: novosItens };
+        }
+        return m;
+      });
+      salvarDados();
+      renderizarPainel();
     }
 
     function alterarStatus(id, novoStatus) {
@@ -243,15 +317,29 @@
       e.preventDefault();
       const placa = document.getElementById('inputPlaca').value.toUpperCase();
       const modelo = document.getElementById('inputModelo').value;
-      const tipo = document.getElementById('selectTipo').value;
       const obs = document.getElementById('inputObs').value;
+      const outroItem = document.getElementById('inputOutroItem').value.trim();
+
+      const itensSelecionados = [];
+      document.querySelectorAll('.chk-item:checked').forEach(chk => {
+        itensSelecionados.push({ nome: chk.value, feito: false });
+      });
+
+      if (outroItem) {
+        itensSelecionados.push({ nome: outroItem, feito: false });
+      }
+
+      if (itensSelecionados.length === 0) {
+        alert('Por favor, marque pelo menos um item ou especifique o serviço!');
+        return;
+      }
 
       const novo = {
         id: Date.now().toString(),
         placa,
         modelo,
-        tipo,
         obs,
+        itens: itensSelecionados,
         status: 'aguardando',
         data: new Date().toLocaleDateString('pt-BR')
       };
@@ -263,7 +351,7 @@
     }
 
     function removerRegistro(id) {
-      if (confirm('Deseja excluir este registro de manutenção?')) {
+      if (confirm('Deseja excluir este veículo do controle?')) {
         manutencoes = manutencoes.filter(m => m.id !== id);
         salvarDados();
         renderizarPainel();
@@ -271,7 +359,7 @@
     }
 
     function limparTudo() {
-      if (confirm('Deseja apagar todos os registros de manutenção da tela?')) {
+      if (confirm('Deseja apagar todos os veículos da tela?')) {
         manutencoes = [];
         salvarDados();
         renderizarPainel();
