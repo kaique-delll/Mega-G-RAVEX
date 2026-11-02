@@ -481,4 +481,140 @@
       const file = event.target.files[0];
       if (!file) return;
 
-      const reader = new
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+          if (jsonRows.length === 0) {
+            alert('A planilha está vazia!');
+            return;
+          }
+
+          let importadosCount = 0;
+
+          jsonRows.forEach((row, index) => {
+            const chavePlaca = Object.keys(row).find(k => k.toLowerCase().includes('placa'));
+            if (!chavePlaca) return;
+
+            const placa = (row[chavePlaca] || '').toString().toUpperCase().trim();
+            if (!placa) return;
+
+            const chaveTicket = Object.keys(row).find(k => k.toLowerCase().includes('ticket') || k.toLowerCase().includes('chamado') || k.toLowerCase().includes('pedido'));
+            const chaveData = Object.keys(row).find(k => k.toLowerCase().includes('data') || k.toLowerCase().includes('agendamento'));
+            const chaveHora = Object.keys(row).find(k => k.toLowerCase().includes('hor') || k.toLowerCase().includes('hora'));
+            const chaveServ = Object.keys(row).find(k => k.toLowerCase().includes('servi') || k.toLowerCase().includes('tarefa') || k.toLowerCase().includes('check'));
+            const chaveObs = Object.keys(row).find(k => k.toLowerCase().includes('obs'));
+
+            const ticket = chaveTicket ? (row[chaveTicket] || 'S/N').toString().trim() : 'S/N';
+            const dataAgendamento = chaveData ? (row[chaveData] || '').toString().trim() : '';
+            const horaAgendamento = chaveHora ? (row[chaveHora] || '').toString().trim() : '';
+            const servicosTexto = chaveServ ? (row[chaveServ] || '').toString().trim() : '';
+            const obs = chaveObs ? (row[chaveObs] || '').toString().trim() : '';
+
+            let itens = [];
+            if (servicosTexto) {
+              itens = servicosTexto.split(/[,|\/]/).map(n => ({ nome: n.trim(), feito: false })).filter(i => i.nome.length > 0);
+            }
+            if (itens.length === 0) {
+              itens = [{ nome: 'Manutenção / Instalação', feito: false }];
+            }
+
+            manutencoes.unshift({
+              id: (Date.now() + index).toString(),
+              placa,
+              ticket,
+              dataAgendamento,
+              horaAgendamento,
+              obs,
+              itens,
+              status: 'aguardando',
+              dataCadastro: new Date().toLocaleDateString('pt-BR')
+            });
+
+            importadosCount++;
+          });
+
+          if (importadosCount > 0) {
+            salvarDados();
+            renderizarPainel();
+            alert(`Sucesso! ${importadosCount} registro(s) importado(s).`);
+          } else {
+            alert('Não foi possível encontrar a coluna "Placa" na planilha.');
+          }
+        } catch (err) {
+          alert('Erro ao ler a planilha.');
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+      event.target.value = '';
+    }
+
+    function baixarModeloExcel() {
+      const dadosModelo = [
+        { Placa: "ABC-1234", Ticket: "TCK-8842", "Data Agendamento": "2026-10-30", Horario: "08:30", Servicos: "Instalação Rastreador, Alarme", Observacoes: "Trazer sem carga" }
+      ];
+
+      const worksheet = XLSX.utils.json_to_sheet(dadosModelo);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Veiculos");
+      XLSX.writeFile(workbook, "modelo_importacao_ticket.xlsx");
+    }
+
+    function removerRegistro(id) {
+      if (confirm('Deseja excluir este registro?')) {
+        manutencoes = manutencoes.filter(m => m.id !== id);
+        salvarDados();
+        renderizarPainel();
+      }
+    }
+
+    function limparTudo() {
+      if (confirm('Deseja apagar todos os registros?')) {
+        manutencoes = [];
+        salvarDados();
+        renderizarPainel();
+      }
+    }
+
+    function filtrarEHighlight(termo) {
+      document.querySelectorAll('.card-manutencao').forEach(el => {
+        const textoBusca = el.getAttribute('data-busca');
+        if (termo && textoBusca.includes(termo)) {
+          el.classList.add('highlight-search');
+        } else {
+          el.classList.remove('highlight-search');
+        }
+      });
+    }
+
+    function exportarExcel() {
+      if (manutencoes.length === 0) {
+        alert('Nenhum dado para exportar!');
+        return;
+      }
+
+      const dadosExport = manutencoes.map(m => ({
+        Placa: m.placa,
+        Ticket: m.ticket,
+        "Data Agendamento": formatarDataBR(m.dataAgendamento) || "Não agendado",
+        Horario: m.horaAgendamento || "-",
+        Status: m.status,
+        Serviços: m.itens.map(i => `${i.nome} [${i.feito ? 'CONCLUIDO' : 'PENDENTE'}]`).join(' | '),
+        Observações: m.obs || "",
+        "Data Cadastro": m.dataCadastro
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dadosExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Manutencoes");
+      XLSX.writeFile(workbook, `relatorio_frota_ticket_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+  </script>
+</body>
+</html>
